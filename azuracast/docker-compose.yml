@@ -46,7 +46,7 @@ services:
       test: wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1
     ports:
       - 8421:80
-      - 8111:8000
+      - 8000:8000
       - 8119:8005
       - 8113:8006
       - 8114:8010
