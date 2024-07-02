@@ -8,9 +8,9 @@ services:
       - no-new-privileges:true
     healthcheck:
       test: ["CMD-SHELL", "redis-cli ping || exit 1"]
-    user: 1026:100
+    user: 1000:1000
     environment:
-      - TZ=Europe/Bucharest
+      - TZ=Europe/Madrid
     volumes:
       - /home/umbrel/umbrel/my-configs/azuracast-config/redis:/data
     restart: always
