@@ -1,92 +1,47 @@
-version: "3.7"
+version: '3.7'
+
 services:
-  azuracast-redis:
-    image: redis
-    container_name: AzuraCast-REDIS
-    hostname: azuracast-redis
-    security_opt:
-      - no-new-privileges:true
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping || exit 1"]
-    user: 1000:1000
+  azurarelay:
+    image: azuracast/azurarelay:latest
+    container_name: azurarelay
     environment:
-      - TZ=Europe/Madrid
-    volumes:
-      - /home/umbrel/umbrel/my-configs/azuracast-config/redis:/data
-    restart: always
-
-  azuracast-db:
-    image: mariadb:11.3-jammy
-    container_name: AzuraCast-DB
-    hostname: azuracast-db
-    security_opt:
-      - no-new-privileges:true
-    environment:
-      - TZ=Europe/Bucharest
-      - MYSQL_ROOT_PASSWORD=azuracastrootpw
-      - MYSQL_DATABASE=azuracast
-      - MYSQL_USER=azuracastuser
-      - MYSQL_PASSWORD=azuracastpw
-      - MYSQL_SLOW_QUERY_LOG=0
-      - MYSQL_MAX_CONNECTIONS=100
-    volumes:
-      - /home/umbrel/umbrel/my-configs/azuracast-config/dbconfig:/var/lib/mysql:rw
-    restart: always
-
-  azuracast:
-    image: azuracast/azuracast:latest
-    container_name: AzuraCast
-    hostname: azuracast
-    security_opt:
-      - no-new-privileges:true
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
-    logging:
-      options:
-        max-size: "1m"
-        max-file: "5"
-    healthcheck:
-      test: wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1
+      - AZURARELAY_HTTP_PORT=8421
+      - AZURARELAY_HTTPS_PORT=443
     ports:
-      - 8421:80
-      - 8111:8000
-      - 8119:8005
-      - 8113:8006
-      - 8114:8010
-      - 8115:8015
-      - 8116:8016
-      - 8117:8020
-    environment:
-      - APPLICATION_ENV=production
-      - MYSQL_HOST=azuracast-db
-      - MYSQL_PORT=3306
-      - MYSQL_USER=azuracastuser
-      - MYSQL_PASSWORD=azuracastpw
-      - MYSQL_DATABASE=azuracast
-      - ENABLE_REDIS=true
-      - REDIS_HOST=azuracast-redis
-      - REDIS_PORT=6379
-      - REDIS_DB=1
-      - PROFILING_EXTENSION_HTTP_IP_WHITELIST=*
-      - TZ=Europe/Bucharest
-      - PUID=1026
-      - PGID=100
+      - "8421:80"
+      - "8443:443"
     volumes:
-      - /home/umbrel/umbrel/my-configs/azuracast-config/uploads:/var/azuracast/uploads
-      - /home/umbrel/umbrel/my-configs/azuracast-config/stations:/var/azuracast/stations
-      - /home/umbrel/umbrel/my-configs/azuracast-config/shoutcast:/var/azuracast/servers/shoutcast2
-      - /home/umbrel/umbrel/my-configs/azuracast-config/stereo:/var/azuracast/servers/stereo_tool
-      - /home/umbrel/umbrel/my-configs/azuracast-config/geoip:/var/azuracast/geoip
-      - /home/umbrel/umbrel/my-configs/azuracast-config/persist:/var/azuracast/sftpgo/persist
-      - /home/umbrel/umbrel/my-configs/azuracast-config/backups:/var/azuracast/backups
-      - /home/umbrel/umbrel/my-configs/azuracast-config/acme:/var/azuracast/acme
-      - /home/umbrel/umbrel/my-configs/azuracast-config/dbmysql:/var/lib/mysql
-      - /home/umbrel/umbrel/data/storage/Deemix:/var/azuracast/music
+      - /home/umbrel/umbrel/my-configs/azurarelay-config:/var/app/www_tmp/azurarelay.env
+      - /home/umbrel/umbrel/my-configs/azurarelay-data:/var/azurarelay
+      - /home/umbrel/umbrel/my-configs/azurarelay-db:/var/lib/mysql
+      - /home/umbrel/umbrel/my-configs/azurarelay-redis:/data
+      - /home/umbrel/umbrel/data/storage/Deemix:/var/azurarelay/music
     restart: always
     depends_on:
-      azuracast-redis:
-        condition: service_healthy
-      azuracast-db:
-        condition: service_started
+      - azurarelay-db
+      - azurarelay-redis
+
+  azurarelay-db:
+    image: mariadb:11.3-jammy
+    container_name: azurarelay-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=azuracastrootpw
+      - MYSQL_DATABASE=azurarelay
+      - MYSQL_USER=azurarelayuser
+      - MYSQL_PASSWORD=azurarelaypw
+    volumes:
+      - /home/umbrel/umbrel/my-configs/azurarelay-db:/var/lib/mysql
+    restart: always
+
+  azurarelay-redis:
+    image: redis
+    container_name: azurarelay-redis
+    restart: always
+    volumes:
+      - /home/umbrel/umbrel/my-configs/azurarelay-redis:/data
+
+volumes:
+  azurarelay-config:
+  azurarelay-data:
+  azurarelay-db:
+  azurarelay-redis:
